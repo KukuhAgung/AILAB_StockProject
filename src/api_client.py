@@ -44,3 +44,28 @@ def get_broker_summary(ticker, date_str):
     except Exception as e:
         print(f"Error {ticker}: {e}")
         return None
+    
+
+
+def get_historical_price(ticker, from_date, to_date):
+    """Mengambil data harga historis (OHLCV) untuk Target Variable."""
+    # Pastikan config sudah di-import di bagian atas file
+    url = f"{config.BASE_URL}/{ticker}/historical"
+    params = {
+        "api_key": config.API_KEY,
+        "from": from_date,
+        "to": to_date
+    }
+    
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        data = resp.json()
+        
+        if data['status'] == 'success':
+            return data['data']['results']
+        else:
+            print(f"❌ API Error ({ticker}): {data.get('message')}")
+            return []
+    except Exception as e:
+        print(f"❌ Connection Error: {e}")
+        return []
