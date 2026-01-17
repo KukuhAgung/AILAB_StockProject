@@ -1,71 +1,106 @@
 # src/api_client.py
 import requests
-import config  # Import dari file config.py
+import config
+import time
 
-def get_todays_top_gainers():
-    """Mengambil list saham Top Gainer hari ini."""
-    print("📡 Menghubungi Server: Request Top Gainer...")
-    url = f"{config.BASE_URL}/top_gainer"
-    params = {"api_key": config.API_KEY}
-    
-    try:
-        resp = requests.get(url, params=params, timeout=10)
-        data = resp.json()
-        
-        if data['status'] == 'success':
-            results = data['data']['results']
-            tickers = [item['symbol'] for item in results]
-            # Batasi jumlah sesuai config
-            return tickers[:config.MAX_STOCKS_TOP_GAINER]
-        else:
-            print(f"❌ API Error: {data.get('message')}")
-            return []
-    except Exception as e:
-        print(f"❌ Connection Error: {e}")
-        return []
+def get_headers():
+    return {
+        "Authorization": f"Bearer {config.API_KEY}",
+        "Content-Type": "application/json"
+    }
 
-def get_broker_summary(ticker, date_str):
-    """Mengambil data broker summary untuk 1 saham & 1 tanggal."""
-    url = f"{config.BASE_URL}/{ticker}/broker_summary"
+def get_broker_summary(ticker, from_date, to_date):
+    url = f"{config.BASE_URL}/summary/stock/{ticker}"
     params = {
-        "api_key": config.API_KEY, 
-        "date": date_str, 
-        "investor": "ALL"
+        "from": from_date,
+        "to": to_date,
+        "investor": config.DEFAULT_INVESTOR,
+        "market": config.DEFAULT_MARKET
     }
     
     try:
-        resp = requests.get(url, params=params, timeout=10)
+        resp = requests.get(url, headers=get_headers(), params=params, timeout=config.TIMEOUT)
         if resp.status_code == 200:
             return resp.json()
+        elif resp.status_code == 401:
+            print(f"401 UNAUTHORIZED: Token Expired!")
+            return "UNAUTHORIZED"
         elif resp.status_code == 429:
+            print(f"Rate Limit Hit for {ticker}!")
+            time.sleep(5)
             return "LIMIT"
         else:
+            print(f"Error {resp.status_code}: {resp.text}")
             return None
     except Exception as e:
-        print(f"Error {ticker}: {e}")
+        print(f"Connection Error {ticker}: {e}")
         return None
-    
 
-
-def get_historical_price(ticker, from_date, to_date):
-    """Mengambil data harga historis (OHLCV) untuk Target Variable."""
-    # Pastikan config sudah di-import di bagian atas file
-    url = f"{config.BASE_URL}/{ticker}/historical"
+def get_inventory_chart(ticker, from_date, to_date, scope='vol'):
+    url = f"{config.BASE_URL}/inventory-chart/stock/{ticker}"
     params = {
-        "api_key": config.API_KEY,
         "from": from_date,
-        "to": to_date
+        "to": to_date,
+        "scope": scope,
+        "investor": config.DEFAULT_INVESTOR,
+        "market": config.DEFAULT_MARKET
     }
     
     try:
-        resp = requests.get(url, params=params, timeout=10)
-        data = resp.json()
-        
-        if data['status'] == 'success':
-            return data['data']['results']
+        resp = requests.get(url, headers=get_headers(), params=params, timeout=config.TIMEOUT)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 401:
+            print(f"401 UNAUTHORIZED: Token Expired!")
+            return "UNAUTHORIZED"
+        elif resp.status_code == 429:
+            print(f"Rate Limit Hit for {ticker}!")
+            time.sleep(5)
+            return "LIMIT"
         else:
-            print(f"❌ API Error ({ticker}): {data.get('message')}")
-            return []
+            print(f"Error {resp.status_code}: {resp.text}")
+            return None
     except Exception as e:
-        print(f"❌ Connection Error: {e}")
-        return []
+        print(f"Inventory Error {ticker}: {e}")
+        return None
+
+def get_shareholder_number(ticker):
+    url = f"{config.BASE_URL}/shareholder/number/{ticker}"
+    try:
+        resp = requests.get(url, headers=get_headers(), timeout=config.TIMEOUT)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 401:
+            print(f"401 UNAUTHORIZED: Token Expired!")
+            return "UNAUTHORIZED"
+        elif resp.status_code == 429:
+            print(f"Rate Limit Hit for {ticker}!")
+            time.sleep(5)
+            return "LIMIT"
+        else:
+            print(f"Error {resp.status_code}: {resp.text}")
+            return None
+    except Exception as e:
+        print(f"Shareholder Error {ticker}: {e}")
+        return None
+
+def get_historical_price_bulk(ticker, from_date, to_date):
+    url = f"{config.BASE_URL}/chart/stock/{ticker}"
+    params = {"from": from_date, "to": to_date}
+    try:
+        resp = requests.get(url, headers=get_headers(), params=params, timeout=config.TIMEOUT)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 401:
+            print(f"401 UNAUTHORIZED: Token Expired!")
+            return "UNAUTHORIZED"
+        elif resp.status_code == 429:
+            print(f"Rate Limit Hit for {ticker}!")
+            time.sleep(5)
+            return "LIMIT"
+        else:
+            print(f"Error {resp.status_code}: {resp.text}")
+            return None
+    except Exception as e:
+        print(f"Price Error {ticker}: {e}")
+        return None
