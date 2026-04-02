@@ -176,7 +176,7 @@ def get_live_data(ticker):
             on='date',
             direction='backward'
         )
-        df['shareholder_count'] = df['shareholder_count'].fillna(method='ffill')
+        df['shareholder_count'] = df['shareholder_count'].ffill()
     else:
         df = df_price.copy()
         df['shareholder_count'] = np.nan
