@@ -2,24 +2,25 @@
 import requests
 import config
 import time
+import streamlit as st
 
 def get_headers():
     return {
-        "Authorization": f"Bearer {config.API_KEY}",
+        "Authorization": f"Bearer {st.secrets["API_KEY"]}",
         "Content-Type": "application/json"
     }
 
 def get_broker_summary(ticker, from_date, to_date):
-    url = f"{config.BASE_URL}/summary/stock/{ticker}"
+    url = f"{st.secrets["BASE_URL"]}/summary/stock/{ticker}"
     params = {
         "from": from_date,
         "to": to_date,
-        "investor": config.DEFAULT_INVESTOR,
-        "market": config.DEFAULT_MARKET
+        "investor": st.secrets["DEFAULT_INVESTOR"],
+        "market": st.secrets["DEFAULT_MARKET"]
     }
     
     try:
-        resp = requests.get(url, headers=get_headers(), params=params, timeout=config.TIMEOUT)
+        resp = requests.get(url, headers=get_headers(), params=params, timeout=st.secrets["TIMEOUT"])
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 401:
@@ -37,17 +38,17 @@ def get_broker_summary(ticker, from_date, to_date):
         return None
 
 def get_inventory_chart(ticker, from_date, to_date, scope='vol'):
-    url = f"{config.BASE_URL}/inventory-chart/stock/{ticker}"
+    url = f"{st.secrets["BASE_URL"]}/inventory-chart/stock/{ticker}"
     params = {
         "from": from_date,
         "to": to_date,
         "scope": scope,
-        "investor": config.DEFAULT_INVESTOR,
-        "market": config.DEFAULT_MARKET
+        "investor": st.secrets["DEFAULT_INVESTORE"],
+        "market": st.secrets["DEFAULT_MARKET"]
     }
     
     try:
-        resp = requests.get(url, headers=get_headers(), params=params, timeout=config.TIMEOUT)
+        resp = requests.get(url, headers=get_headers(), params=params, timeout=st.secrets["TIMEOUT"])
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 401:
@@ -65,9 +66,9 @@ def get_inventory_chart(ticker, from_date, to_date, scope='vol'):
         return None
 
 def get_shareholder_number(ticker):
-    url = f"{config.BASE_URL}/shareholder/number/{ticker}"
+    url = f"{st.secrets["BASE_URL"]}/shareholder/number/{ticker}"
     try:
-        resp = requests.get(url, headers=get_headers(), timeout=config.TIMEOUT)
+        resp = requests.get(url, headers=get_headers(), timeout=st.secrets["TIMEOUT"])
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 401:
@@ -85,10 +86,10 @@ def get_shareholder_number(ticker):
         return None
 
 def get_historical_price_bulk(ticker, from_date, to_date):
-    url = f"{config.BASE_URL}/chart/stock/{ticker}"
+    url = f"{st.secrets["BASE_URL"]}/chart/stock/{ticker}"
     params = {"from": from_date, "to": to_date}
     try:
-        resp = requests.get(url, headers=get_headers(), params=params, timeout=config.TIMEOUT)
+        resp = requests.get(url, headers=get_headers(), params=params, timeout=st.secrets["TIMEOUT"])
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 401:
@@ -109,16 +110,16 @@ def get_historical_price_bulk(ticker, from_date, to_date):
 
 def get_summary_chart(ticker, from_date, to_date, scope='volume'):
 
-    url = f"{config.BASE_URL}/summary-chart/stock/{ticker}"
+    url = f"{st.secrets["BASE_URL"]}/summary-chart/stock/{ticker}"
     params = {
         "from": from_date,
         "to": to_date,
         "scope": scope,
-        "market": config.DEFAULT_MARKET
+        "market": st.secrets["DEFAULT_MARKET"]
     }
     
     try:
-        resp = requests.get(url, headers=get_headers(), params=params, timeout=config.TIMEOUT)
+        resp = requests.get(url, headers=get_headers(), params=params, timeout=st.secrets["TIMEOUT"])
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 401:
@@ -139,10 +140,10 @@ def get_summary_chart(ticker, from_date, to_date, scope='volume'):
 
 def get_shareholder_composition(ticker):
     
-    url = f"{config.BASE_URL}/shareholder/{ticker}"
+    url = f"{st.secrets["BASE_URL"]}/shareholder/{ticker}"
     
     try:
-        resp = requests.get(url, headers=get_headers(), timeout=config.TIMEOUT)
+        resp = requests.get(url, headers=get_headers(), timeout=st.secrets["TIMEOUT"])
         if resp.status_code == 200:
             return resp.json()
         elif resp.status_code == 401:

@@ -1,7 +1,6 @@
 import streamlit as st
 import joblib
 import os
-import config
 from datetime import datetime
 from google import genai
 from google.genai import types
@@ -9,7 +8,7 @@ import plotly.graph_objects as go
 
 from src import helper
 
-GEMINI_API_KEY = config.GEMINI_API_KEY
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 try:
     client = genai.Client(api_key=GEMINI_API_KEY)
 except Exception as e:
