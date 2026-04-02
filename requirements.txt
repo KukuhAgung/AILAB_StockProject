@@ -1,6 +1,10 @@
 requests
+optuna
+joblib
+catboost
+lightgbm
+scikit-learn
 pandas
 openpyxl
-optuna
-scikit-learn
-joblib
+xgboost
+streamlit

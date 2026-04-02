@@ -6,16 +6,17 @@ import config
 from src import api_client, data_processor
 
 def run_harvester():
-    print("🚀 INVEZGO HYBRID HARVESTER (MODE: WHALE TRACKING)")
-    print("==================================================")
+    print("🚀 INVEZGO HYBRID HARVESTER (MODE: WHALE TRACKING & RE-CALCULATION)")
+    print("==================================================================")
     
     # 1. Load Target
     target_tickers = getattr(config, 'TARGET_TICKERS', [])
     if not target_tickers: target_tickers = getattr(config, 'WATCHLIST', [])
     
-    # 2. Setup Waktu (300 Hari ke Belakang)
+    # 2. Setup Waktu
+    # Mengambil data 300 hari ke belakang untuk membentuk dataset Raw yang solid
     end_date = datetime.now()
-    days_to_harvest = 300  
+    days_to_harvest = 90  
     start_date = end_date - timedelta(days=days_to_harvest)
     
     start_str = start_date.strftime("%Y-%m-%d")
@@ -25,7 +26,7 @@ def run_harvester():
     print(f"📅 Periode: {start_str} s/d {end_str}")
     print(f"⚠️ Mode: scope='vol' (Satuan Lot)")
     
-    input("Tekan ENTER untuk mulai panen data...")
+    input("Tekan ENTER untuk mulai panen data (Re-Scraping)...")
 
     all_broker_summary = [] 
     all_inventory_ts = []   
@@ -37,22 +38,25 @@ def run_harvester():
     for i, ticker in enumerate(target_tickers):
         print(f"[{i+1}/{len(target_tickers)}] {ticker}...", end=" ")
 
-        # --- A. Broker Snapshot ---
+        # --- A. Broker Snapshot (UPDATED LOGIC: MANUAL CALC) ---
+        # Mengambil raw data broker summary
         raw_broker = api_client.get_broker_summary(ticker, start_str, end_str)
         
         # [CEK 401]
         if raw_broker == "UNAUTHORIZED":
             print("\n⛔ CRITICAL ERROR: TOKEN EXPIRED (401). Stopping Process...")
             stop_signal = True
-            break # Keluar dari loop
+            break
         elif raw_broker == "LIMIT":
             print("\n⛔ LIMIT REACHED!"); break
             
         if raw_broker and raw_broker != "LIMIT":
-            parsed_broker = data_processor.parse_broker_snapshot(raw_broker, ticker)
-            if parsed_broker: all_broker_summary.append(parsed_broker)
+            # GUNAKAN FUNGSI BARU: parse_broker_snapshot
+            parse_d_broker = data_processor.parse_broker_snapshot(raw_broker, ticker)
+            if parse_d_broker: all_broker_summary.append(parse_d_broker)
 
-        # --- B. Inventory Chart (Time Series) ---
+        # --- B. Inventory Chart / Price (UPDATED NAME) ---
+        # Mengambil raw data chart (Open, High, Low, Close, Volume + Net Broker Vol)
         raw_inventory = api_client.get_inventory_chart(ticker, start_str, end_str, scope='vol')
         
         # [CEK 401]
@@ -62,10 +66,11 @@ def run_harvester():
             break
             
         if raw_inventory:
-            parsed_ts = data_processor.parse_inventory_timeseries(raw_inventory, ticker)
-            if parsed_ts: all_inventory_ts.extend(parsed_ts)
+            # GUNAKAN FUNGSI BARU: parse_price
+            parse_d_ts = data_processor.parse_price(raw_inventory, ticker)
+            if parse_d_ts: all_inventory_ts.extend(parse_d_ts)
 
-        # --- C. Shareholder ---
+        # --- C. Shareholder (NAME MATCH) ---
         raw_sh = api_client.get_shareholder_number(ticker)
         
         # [CEK 401]
@@ -75,13 +80,14 @@ def run_harvester():
             break
             
         if raw_sh:
-            parsed_sh = data_processor.parse_invezgo_shareholder(raw_sh, ticker)
-            if parsed_sh: all_shareholder_data.extend(parsed_sh)
+            parse_d_sh = data_processor.parse_shareholder(raw_sh, ticker)
+            if parse_d_sh: all_shareholder_data.extend(parse_d_sh)
         
         print("✅")
+        # Beri jeda sedikit agar tidak terkena Rate Limit API
         time.sleep(0.5)
 
-    # 4. Simpan Data (Meskipun berhenti di tengah jalan, simpan yang sudah dapat)
+    # 4. Simpan Data
     save_data(all_broker_summary, all_inventory_ts, all_shareholder_data)
     
     if stop_signal:
@@ -93,14 +99,17 @@ def save_data(broker, inventory, shareholder):
     ts = int(time.time())
     
     if inventory:
-        pd.DataFrame(inventory).to_excel(f"data/raw/inventory_ts_{ts}.xlsx", index=False)
-        print(f"💾 Disimpan: data/raw/inventory_ts_{ts}.xlsx (Data Utama)")
+        pd.DataFrame(inventory).to_excel(f"data/raw/90d/inventory_ts_{ts}.xlsx", index=False)
+        print(f"💾 Disimpan: data/raw/90d/inventory_ts_{ts}.xlsx (Data Harga & Volume Harian)")
     
     if broker:
-        pd.DataFrame(broker).to_excel(f"data/raw/broker_snapshot_{ts}.xlsx", index=False)
+        # File ini sekarang akan berisi 'top_buyer_avg' yang BENAR (Sesuai Stockbit)
+        pd.DataFrame(broker).to_excel(f"data/raw/90d/broker_snapshot_{ts}.xlsx", index=False)
+        print(f"💾 Disimpan: data/raw/90d/broker_snapshot_{ts}.xlsx (Data Broker Terkoreksi)")
     
     if shareholder:
-        pd.DataFrame(shareholder).to_excel(f"data/raw/shareholder_{ts}.xlsx", index=False)
+        pd.DataFrame(shareholder).to_excel(f"data/raw/90d/shareholder_{ts}.xlsx", index=False)
+        print(f"💾 Disimpan: data/raw/90d/shareholder_{ts}.xlsx")
 
 if __name__ == "__main__":
     run_harvester()
