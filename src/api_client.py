@@ -42,7 +42,7 @@ def get_inventory_chart(ticker, from_date, to_date, scope='vol'):
         "from": from_date,
         "to": to_date,
         "scope": scope,
-        "investor": st.secrets["DEFAULT_INVESTORE"],
+        "investor": st.secrets["DEFAULT_INVESTOR"],
         "market": st.secrets["DEFAULT_MARKET"]
     }
     
