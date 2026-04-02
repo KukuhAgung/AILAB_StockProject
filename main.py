@@ -2,7 +2,7 @@ import pandas as pd
 import time
 from datetime import datetime, timedelta
 import os
-import config
+import streamlit as st
 from src import api_client, data_processor
 
 def run_harvester():
@@ -10,8 +10,8 @@ def run_harvester():
     print("==================================================================")
     
     # 1. Load Target
-    target_tickers = getattr(config, 'TARGET_TICKERS', [])
-    if not target_tickers: target_tickers = getattr(config, 'WATCHLIST', [])
+    target_tickers = st.secrets.get("TARGET_TICKERS", [])
+    if not target_tickers: target_tickers = st.secrets.get("WATCHLIST", [])
     
     # 2. Setup Waktu
     # Mengambil data 300 hari ke belakang untuk membentuk dataset Raw yang solid

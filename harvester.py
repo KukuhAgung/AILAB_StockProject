@@ -2,7 +2,7 @@ import pandas as pd
 import time
 from datetime import datetime, timedelta
 import os
-import config
+import streamlit as st
 from src import api_client, data_processor
 
 def run_ultimate_harvester():
@@ -10,8 +10,8 @@ def run_ultimate_harvester():
     print("=================================================================")
     
     # 1. Setup Target & Waktu
-    target_tickers = getattr(config, 'TARGET_TICKERS', [])
-    if not target_tickers: target_tickers = getattr(config, 'WATCHLIST', [])
+    target_tickers = st.secrets.get("TARGET_TICKERS", [])
+    if not target_tickers: target_tickers = st.secrets.get("WATCHLIST", [])
     
     end_date = datetime.now()
     start_date = end_date - timedelta(days=90) # 300 Hari ke belakang

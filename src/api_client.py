@@ -1,6 +1,5 @@
 # src/api_client.py
 import requests
-import config
 import time
 import streamlit as st
 
